@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161105105417) do
+ActiveRecord::Schema.define(version: 20161106021319) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -21,6 +21,21 @@ ActiveRecord::Schema.define(version: 20161105105417) do
     t.datetime "created_at",  null: false
     t.datetime "updated_at",  null: false
     t.index ["customer_id"], name: "index_addresses_on_customer_id", using: :btree
+  end
+
+  create_table "complaints", force: :cascade do |t|
+    t.time     "date"
+    t.float    "amt_total"
+    t.time     "closing_date"
+    t.integer  "customer_id"
+    t.integer  "system_id"
+    t.string   "complaint_status", default: "new"
+    t.boolean  "suspended",        default: false
+    t.string   "reason"
+    t.datetime "created_at",                       null: false
+    t.datetime "updated_at",                       null: false
+    t.index ["customer_id"], name: "index_complaints_on_customer_id", using: :btree
+    t.index ["system_id"], name: "index_complaints_on_system_id", using: :btree
   end
 
   create_table "contacts", force: :cascade do |t|
@@ -44,6 +59,35 @@ ActiveRecord::Schema.define(version: 20161105105417) do
     t.datetime "created_at",  null: false
     t.datetime "updated_at",  null: false
     t.index ["customer_id"], name: "index_emails_on_customer_id", using: :btree
+  end
+
+  create_table "payments", force: :cascade do |t|
+    t.date     "date"
+    t.string   "mode",           default: "cash"
+    t.string   "check_no"
+    t.float    "amt_received"
+    t.string   "payment_status", default: "pending"
+    t.date     "next_date"
+    t.boolean  "suspended",      default: false
+    t.string   "reason"
+    t.integer  "complaint_id"
+    t.datetime "created_at",                         null: false
+    t.datetime "updated_at",                         null: false
+    t.index ["complaint_id"], name: "index_payments_on_complaint_id", using: :btree
+  end
+
+  create_table "problems", force: :cascade do |t|
+    t.string   "issue"
+    t.string   "problem_type",   default: "hardware"
+    t.string   "priority",       default: "low"
+    t.time     "closing_date"
+    t.string   "problem_status", default: "new"
+    t.boolean  "suspended",      default: false
+    t.string   "reason"
+    t.integer  "complaint_id"
+    t.datetime "created_at",                          null: false
+    t.datetime "updated_at",                          null: false
+    t.index ["complaint_id"], name: "index_problems_on_complaint_id", using: :btree
   end
 
   create_table "systems", force: :cascade do |t|

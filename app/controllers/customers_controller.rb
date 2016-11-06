@@ -24,10 +24,16 @@ class CustomersController < ApplicationController
 
   # GET /customers/1/edit
   def edit
-    @contacts = @customer.contacts.build
-    @addresses = @customer.addresses.build
-    @emails = @customer.emails.build
-    @systems = @customer.systems.build
+    if @customer.contacts.count == 0
+      @contacts = @customer.contacts.build
+    elsif  @customer.addresses.count == 0
+      @addresses = @customer.addresses.build
+    elsif  @customer.emails.count == 0
+      @emails = @customer.emails.build
+    elsif  @customer.systems.count == 0
+      @systems = @customer.systems.build
+    else
+    end
   end
 
   # POST /customers
@@ -83,7 +89,7 @@ class CustomersController < ApplicationController
     # Never trust parameters from the scary internet, only allow the white list through.
     def customer_params
       # params.require(:customer).permit(:first_name, :last_name)
-      params.fetch(:customer,{}).permit(:id, :first_name, :last_name, contacts_attributes: [:id, :number, :_destroy], emails_attributes: [:id, :eid, :_destroy], addresses_attributes: [:id, :name, :_destroy] )
+      params.fetch(:customer,{}).permit(:id, :first_name, :last_name, contacts_attributes: [:id, :number, :_destroy], emails_attributes: [:id, :eid, :_destroy], addresses_attributes: [:id, :name, :_destroy], systems_attributes: [:id, :category, :name, :number, :_destroy] )
 
     end
 end

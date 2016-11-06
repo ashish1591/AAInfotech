@@ -1,0 +1,163 @@
+
+<div class="container">
+  <%= bootstrap_form_for(@complaint) do |f| %>
+    <% if complaint.errors.any? %>
+      <div id="error_explanation">
+        <h2><%= pluralize(complaint.errors.count, "error") %> prohibited this complaint from being saved:</h2>
+
+        <ul>
+        <% complaint.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <div class="row">
+       <div class="col-md-4 col-sm-12 col-xs-12 col-lg-4 equal-height">
+        <%= f.date_select :date, {start_year: Date.today.year, end_year: Date.today.year - 5}, {required: true, :class => "form-control "} %>
+
+        <%= f.text_field :amt_total %>
+
+        <%= f.select :customer_id,  options_for_select(Customer.all.map {|e| [e.first_name+" "+e.last_name, e.id]},f.object.customer_id),{prompt: 'Select customer', :disabled => 'Select customer', :class => "form-control selectpicker"} %>
+
+        <%if params[:action] == "edit"%>
+          <%= f.select :system_id, options_for_select(@complaint.customer.systems.all.map {|e| [e.name, e.id]},f.object.system_id), {prompt: 'Select System', :class => "form-control selectpicker"}%>
+        <% else %>
+          <%= f.select :system_id, [], {include_blank: 'Select System', :class => "form-control selectpicker"}%>
+        <% end %>
+
+        <%= f.select :complaint_status,  options_for_select([['New','new'],['WIP','wip'],['Complete','complete']], f.object.complaint_status),{},{ :class => "form-control selectpicker"} %>
+        
+        <%= f.date_select :closing_date,{ start_year: Date.today.year, end_year: Date.today.year - 5}, {required: true, :class => "form-control "} %>
+
+        <%if params[:action] == "edit"%>
+          <%= f.check_box :suspended, {:class => ""}, true, false %>
+
+          <%= f.text_area :reason %>
+        <% end %>
+      </div>
+
+    </div>
+    
+    <div class="actions">
+      <%= f.submit %>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  $(function(){
+    var lastSystem = $('select#complaint_system_id').val();
+    var lastCustomer = $('select#complaint_customer_id').val();
+    var lastStatus = $('select#complaint_complaint_status').val();
+
+    $('select#complaint_system_id').unbind('click').bind('click',function(){
+      lastSystem = $(this).val();
+    })
+
+    $('select#complaint_customer_id').unbind('click').bind('click',function(){
+      lastCustomer = $(this).val();
+    })
+
+    $('select#complaint_complaint_status').unbind('click').bind('click',function(){
+      lastStatus = $(this).val();
+    })
+
+    $("#complaint_suspended").unbind('change').bind('change',function(){
+      if( $(this).prop('checked') === true )
+        $('#complaint_reason').closest(".form-group").removeClass('hide')
+      else
+        $('#complaint_reason').closest(".form-group").addClass('hide')
+
+    });
+
+    $("#complaint_suspended").trigger('change');
+
+    $('select#complaint_system_id').unbind('change').bind('change',function(){
+      var confirmChange = false
+      console.log("<%=params[:action]%>")
+      if("<%=params[:action]%>" === "edit"){
+        confirmChange = confirm("Are you sure to change system for this complaint?")
+        if(!confirmChange){
+          $(this).val(lastSystem);
+          return false;
+        }
+      }
+    });
+
+
+    $('select#complaint_customer_id').unbind('change').bind('change',function(){
+      var confirmChange = false
+      if("<%=params[:action]%>" === "edit"){
+        confirmChange = confirm("Are you sure to change customer for this complaint?")
+      }else{
+        confirmChange = true;
+
+      }
+
+      if(!confirmChange){
+        $(this).val(lastCustomer);
+        return false;
+      }else{
+        var selectedId =$(this).val();
+        var $selectTag =$("select#complaint_system_id")
+        $selectTag.empty().append("<option selected='selected' disabled>Select System</option>");
+        if(selectedId !== ""){
+          ajaxCallWithData("/get_all_systems/"+selectedId, 'POST', "json", {},
+                            function(res){
+                              console.log(res)
+
+                              res.list.forEach(function(sys){
+                                $selectTag.append("<option value='"+sys.id+"'>"+sys.name+"</option>")
+                              })
+                            },
+                            function(data){
+                              console.log("error")
+                            }
+
+                          )
+        }
+      }
+    })
+
+    $("select#complaint_complaint_status").unbind('change').bind('change',function(){
+        var selectedStatus = $(this).val();
+        var pendingProblems = "<%=@complaint.get_pending_problems.count%>";
+        console.log(selectedStatus)
+        console.log(pendingProblems)
+        if(selectedStatus === "complete" && pendingProblems > 0 ){
+          alert("There are "+pendingProblems+ " pending problems for this complaint.. please close/suspend that first");
+          $(this).val(lastStatus);
+          return false;
+        }
+    });
+  })
+
+function ajaxCallWithData(url,method,dataType,data,successCallback,errorCallBack,completeCallBack){
+  console.log(arguments)
+  $.ajax({
+      url  : url,
+      method : method,
+      dataType : dataType,
+      data    :data,
+      success: function(res){
+        console.log("success")
+        res = res 
+        if(typeof successCallback === "function")
+          successCallback(res);
+      },
+      error: function(data, status, error){
+        console.log("error")
+        data = data;
+        if(typeof errorCallBack === "function")
+          errorCallBack(data);
+      },
+      complete: function(){
+        // $('.loading').velocity('fadeOut',1000);
+        if(typeof completeCallBack === "function")
+          completeCallBack()
+      }
+    });
+
+}
+</script>
