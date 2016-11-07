@@ -1,5 +1,8 @@
 
-<div class="container">
+<div class="container-fluid">
+  <% header = (params[:action] == 'new')? 'Create' : 'Update'%>
+  <h1><%=header%> Complaint</h1>
+
   <%= bootstrap_form_for(@complaint) do |f| %>
     <% if complaint.errors.any? %>
       <div id="error_explanation">
@@ -13,36 +16,63 @@
       </div>
     <% end %>
     <div class="row">
-       <div class="col-md-4 col-sm-12 col-xs-12 col-lg-4 equal-height">
-        <%= f.date_select :date, {start_year: Date.today.year, end_year: Date.today.year - 5}, {required: true, :class => "form-control "} %>
+      <div class="col-md-4 col-sm-12 col-xs-12 col-lg-4 equal-height">
+          <%= f.date_select :date, {start_year: Date.today.year, end_year: Date.today.year - 5}, {required: true, :class => "form-control "} %>
 
-        <%= f.text_field :amt_total %>
+          <%= f.text_field :amt_total %>
 
-        <%= f.select :customer_id,  options_for_select(Customer.all.map {|e| [e.first_name+" "+e.last_name, e.id]},f.object.customer_id),{prompt: 'Select customer', :disabled => 'Select customer', :class => "form-control selectpicker"} %>
+          <%= f.select :customer_id,  options_for_select(Customer.all.map {|e| [e.get_full_name, e.id]},f.object.customer_id),{prompt: 'Select customer', :disabled => 'Select customer', :class => "form-control selectpicker"} %>
+          <%if params[:action] == "edit"%>
+            <%= f.select :system_id, options_for_select(@complaint.customer.systems.all.map {|e| [e.name, e.id]},f.object.system_id), {prompt: 'Select System', :class => "form-control selectpicker"}%>
+          <% else %>
+            <%= f.select :system_id, [], {include_blank: 'Select System', :class => "form-control selectpicker"}%>
+          <% end %>
 
-        <%if params[:action] == "edit"%>
-          <%= f.select :system_id, options_for_select(@complaint.customer.systems.all.map {|e| [e.name, e.id]},f.object.system_id), {prompt: 'Select System', :class => "form-control selectpicker"}%>
-        <% else %>
-          <%= f.select :system_id, [], {include_blank: 'Select System', :class => "form-control selectpicker"}%>
-        <% end %>
+          <%= f.select :complaint_status,  options_for_select([['New','new'],['WIP','wip'],['Complete','complete']], f.object.complaint_status),{},{ :class => "form-control selectpicker"} %>
+          
+          <%= f.date_select :closing_date,{ start_year: Date.today.year, end_year: Date.today.year - 5}, {required: true, :class => "form-control "} %>
 
-        <%= f.select :complaint_status,  options_for_select([['New','new'],['WIP','wip'],['Complete','complete']], f.object.complaint_status),{},{ :class => "form-control selectpicker"} %>
-        
-        <%= f.date_select :closing_date,{ start_year: Date.today.year, end_year: Date.today.year - 5}, {required: true, :class => "form-control "} %>
+          <%if params[:action] == "edit"%>
+            <%= f.check_box :suspended, {:class => ""}, true, false %>
 
-        <%if params[:action] == "edit"%>
-          <%= f.check_box :suspended, {:class => ""}, true, false %>
+            <%= f.text_area :reason %>
+          <% end %>
+      </div>
 
-          <%= f.text_area :reason %>
-        <% end %>
+      <div class="col-md-4 col-sm-12 col-xs-12 col-lg-4 equal-height">
+          <% @complaint.problems.each do |problem| %>
+            <%=render :partial=>'/complaints/problem/show', :locals=>{:problem=> problem}%>
+          <% end %>
+          <div class="add-new-problem">
+            ADD Problem
+          </div>
       </div>
 
     </div>
     
     <div class="actions">
+      <%= link_to 'back', complaints_path, :class=> "btn btn-default" %>
       <%= f.submit %>
     </div>
   <% end %>
+  <div class="modal fade " tabindex="-1" role="dialog" id="problem-modal">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title">Modal title</h4>
+        </div>
+        <div class="modal-body" id="problem-body">
+
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Save changes</button>
+        </div>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
 </div>
 
 <script>
@@ -131,6 +161,29 @@
           return false;
         }
     });
+
+
+
+    $(".add-new-problem").unbind('click').bind('click',function(){
+      if("<%= @complaint.new_record? %>" === "true")
+        alert("please save rexord first")
+      else
+       open_problem_partial('<%= @complaint.id %>','none');
+
+    })
+    function open_problem_partial(cid,pid){
+      ajaxCallWithData("/get_problem_partial/"+cid+"/"+pid, 'POST', "", {},
+                            function(res){
+                              console.log(res)
+                              $("#problem-modal").append(res);
+                            },
+                            function(data){
+                              console.log("error")
+                            }
+
+                          )
+    }
+
   })
 
 function ajaxCallWithData(url,method,dataType,data,successCallback,errorCallBack,completeCallBack){

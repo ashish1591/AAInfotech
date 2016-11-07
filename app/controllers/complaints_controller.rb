@@ -15,6 +15,7 @@ class ComplaintsController < ApplicationController
   # GET /complaints/new
   def new
     @complaint = Complaint.new
+    @problem = @complaint.problems.build
   end
 
   # GET /complaints/1/edit
@@ -75,6 +76,34 @@ class ComplaintsController < ApplicationController
       end
     end
     render :json=> {list: list}
+  end
+
+
+  def create_update_problem_path
+    render :json=> params
+    return
+  end
+
+  def get_problem_partial
+    cid = params[:cid]
+    pid = params[:pid]
+    complaint = Complaint.where({id: cid}).last
+    if !pid.nil? and !complaint.nil?
+      if pid != "none"
+        problem = Problem.where({:id=> pid}).last
+      else
+        problem = complaint.problems.create
+      end
+      status= 200
+    end
+    respond_to do |format|
+      if status == 200
+        format.html { render :partial=>'/complaints/problem/new_edit', :locals=>{:problem=> problem, :complaint=> complaint} }
+      else
+        format.json { render json: {data: "error record not found"}, status: :unprocessable_entity }
+      end
+    end
+
   end
 
   private

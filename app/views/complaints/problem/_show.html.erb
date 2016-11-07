@@ -1,0 +1,9 @@
+<%=problem.issue%>
+<%=problem.problem_type%>
+<%=problem.priority%>
+<%=problem.closing_date%>
+<%=problem.problem_status%>
+<%= problem.suspended %>
+<% if problem.suspended %>
+	<%= problem.reason%>
+<% end %>

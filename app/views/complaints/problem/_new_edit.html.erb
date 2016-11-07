@@ -1,0 +1,15 @@
+<%= bootstrap_form_for(problem,url: create_update_problem_path(problem,complaint)) do |f| %>
+    <%= f.text_field :issue %>
+    <%= f.select :problem_type,  options_for_select([['Hardware','hardware'],['Software','software'],['Complete','complete']], f.object.problem_status),{},{ :class => "form-control selectpicker"} %>
+
+    <%= f.select :priority,  options_for_select([['High','high'],['Medium','mediun'],['Low','low']], f.object.priority),{},{ :class => "form-control selectpicker"} %>
+
+    <%= f.date_select :closing_date, {start_year: Date.today.year, end_year: Date.today.year - 5}, {required: true, :class => "form-control "} %>
+
+    <%= f.select :problem_status,  options_for_select([['New','new'],['WIP','wip'],['Complete','complete']], f.object.problem_status),{},{ :class => "form-control selectpicker"} %>
+
+    <%= f.check_box :suspended, {:class => ""}, true, false %>
+
+    <%= f.text_area :reason %>
+
+<% end %>
